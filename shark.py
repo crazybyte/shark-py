@@ -1,20 +1,31 @@
 #!/usr/bin/python
+
+# Original code by battlehax, https://github.com/battlehax. Found at https://github.com/battlehax/shark-py
+
+# Updated code to reflect usage of JSON Web Tokens by the OpenSpot frimware as of 6-2018.
+# Changed all items related to gathering information to GET requests as opposed to POST.
+
 import requests, json, re, binascii, hashlib
 
 password = 'openspot'
-ip = 'openspot.local'
+ip = 'insert ip address here'
 tmp = '/tmp/.shark.auth'
+auth_file = '/tmp/.shark.jtw'
+sms_msg = '/tmp/.shark.sms'
+hotspot_id = 'DMR ID here'
 
 def do_checkauth():
-   global tok, digest, post
+   global post
    try:
-      f = open(tmp, 'r')
-      tok = f.readline()
-      digest = f.readline()
-      post = { 'token': tok, 'digest': digest }
-      login = requests.post("http://"+ip+"/checkauth.cgi", json=post)
+      f_auth = open(auth_file, 'r')
+      auth_text = f_auth.read()
+      header = { 'Authorization': 'Bearer ' + auth_text }
+      login = requests.post("http://"+ip+"/checkauth.cgi", headers=header)
+      print(json.loads(login.text)['success'])
       if int(json.loads(login.text)['success']) != 1:
          return(do_login())
+      else:
+         return
    except:
          return(do_login())
 
@@ -25,14 +36,11 @@ def do_login():
    digest = hashlib.sha256(tok + password).hexdigest()
    post = { 'token': tok, 'digest': digest }
    login = requests.post("http://"+ip+"/login.cgi", json=post)
-   if int(json.loads(login.text)['success']) != 1:
-      return("AUTH ERROR: check password and ip")
-      exit()
-   else:
-      f = open(tmp, 'w')
-      f.write(tok + "\n" + digest)
-      f.close
-      return([ tok, digest ])
+   f = open(auth_file, 'w')
+   f.write(json.loads(login.text)['jwt'])
+   f.close
+   return
+
 
 def get_freq():
    rfreq = requests.post("http://"+ip+"/modemfreq.cgi", json=post)
@@ -43,9 +51,13 @@ def get_freq():
    return{ 'rx': rx, 'tx': tx }
 
 def get_status():
-   rstatus = requests.post("http://"+ip+"/status.cgi", json=post)
+   f_auth = open(auth_file, 'r')
+   auth_text = f_auth.read()
+   header = { 'Authorization': 'Bearer ' + auth_text }
+   rstatus = requests.get("http://"+ip+"/status.cgi", headers=header)
    room = rstatus.json()["connected_to"]
    status = rstatus.json()["status"]
+   print(status)
    if status == 0:
       status = "Standby"
    elif status == 1:
@@ -65,8 +77,12 @@ def get_status():
    return{ 'status': status, 'room': room }
 
 def get_mode():
-   rmode = requests.post("http://"+ip+"/modemmode.cgi", json=post)
+   f_auth = open(auth_file, 'r')
+   auth_text = f_auth.read()
+   header = { 'Authorization': 'Bearer ' + auth_text }
+   rmode = requests.get("http://"+ip+"/modemmode.cgi", headers=header)
    mode = rmode.json()["mode"]
+   print(mode)
    if mode == 0:
       mode = "Idle"
    elif mode == 1:
@@ -91,9 +107,13 @@ def get_mode():
    else:
       submode = "API ERROR: unknown sub mode"
    return{ 'mode': mode, 'submode': submode }
+   print(mode)
 
 def get_connector():
-   rconnector = requests.post("http://"+ip+"/connector.cgi", json=post)
+   f_auth = open(auth_file, 'r')
+   auth_text = f_auth.read()
+   header = { 'Authorization': 'Bearer ' + auth_text }
+   rconnector = requests.get("http://"+ip+"/connector.cgi", headers=header)
    connector = rconnector.json()["active_connector"]
    if connector == 0:
       connector = "No connector"
@@ -122,13 +142,20 @@ def get_connector():
    return(connector)
 
 def get_homebrew():
-   r = requests.post("http://"+ip+"/homebrewsettings.cgi", json=post)
+   f = open(auth_file, 'r')
+   auth_text = f.read()
+   header = { 'Authorization': 'Bearer ' + auth_text }
+   r = requests.get("http://"+ip+"/homebrewsettings.cgi", json=post, headers=header)
+   print(r)
+   print(r.json())
    return( r.json() )
 
-
 def set_talkgroup(new_group):
-   post = { 'token': tok, 'digest': digest, 'new_autocon_id': new_group, 'new_c4fm_dstid': new_group, 'new_reroute_id': new_group }
-   de = requests.post("http://"+ip+"/homebrewsettings.cgi", json=post)
+   f_auth = open(auth_file, 'r')
+   auth_text = f_auth.read()
+   header = { 'Authorization': 'Bearer ' + auth_text }
+   post = { 'new_autocon_id': new_group, 'new_c4fm_dstid': new_group, 'new_reroute_id': new_group }
+   de = requests.post("http://"+ip+"/homebrewsettings.cgi", json=post, headers=header)
    return(json.loads(de.text)['changed'])
 
 def set_freq( new_rx_freq, new_tx_freq = 1 ):
@@ -162,22 +189,51 @@ def set_mode( new_mode ):
    if int(json.loads(dm.text)['changed']) != 1:
       return("MODE ERROR: cannot change mode")
 
-def do_send_sms( dstid, msg ):
-    send_calltype = "0"
-    send_srcid = "9998"
-    send_format = "1" #MD-380/390
+def do_send_sms( sms_type, sms_format, dstid, msg ):
+    only_save = "0"
+# Replaced default values with input variable. Use quotes to restore default values
+    send_calltype = sms_type # 0=Private, 1=TalkGroup
+    send_srcid = hotspot_id
+    send_format = sms_format #MD-380/390 is 1
     send_tdma_channel = "0"
+    send_to_modem = "1" #0=Network, 1=Modem
     encoded = "".join([str('00' + x) for x in re.findall('..',binascii.hexlify(msg))] )
-    if len(encoded) > 150:
+    f = open(auth_file, 'r')
+    auth_text = f.read()
+# Changed character count from 150 to 300, this is to accomodate pairs as opposed to individual characters.
+    if len(encoded) > 300:
       return("Message too long")
-    post = { 'token': tok, 'digest': digest, 'send_dstid': dstid, 'send_calltype': send_calltype, 'send_srcid': send_srcid, 'send_format': send_format, 'send_tdma_channel': send_tdma_channel, 'send_msg': encoded.upper() }
-    requests.post("http://"+ip+"/status-dmrsms.cgi", json=post)
+    post = { 'only_save': only_save, 'send_dstid': dstid, 'send_calltype': send_calltype, 'send_srcid': send_srcid, 'send_format': send_format, 'send_tdma_channel': send_tdma_channel, 'send_to_modem': send_to_modem, 'send_msg': encoded.upper() }
+    header = {'Authorization': 'Bearer ' + auth_text }
+    requests.post("http://"+ip+"/status-dmrsms.cgi", json=post, headers=header)
+    rq = requests.post("http://"+ip+"/status-dmrsms.cgi", json=post, headers=header)
+    print(rq)
+    print(post)
+    print(encoded)
+    print(auth_text)
 
 def do_recieve_sms():
-   post = { 'token': tok, 'digest': digest }
-   r = requests.post("http://"+ip+"/status-dmrsms.cgi", json=post)
-   sms_sender = str(json.loads(r.text)['rx_msg_srcid'])
-   sms_message = ''.join(json.loads(r.text)['rx_msg'].split('00')).decode('hex')
+   f = open(auth_file, 'r')
+   auth_text = f.read()
+   header = { 'Authorization': 'Bearer ' + auth_text }
+   r = requests.get("http://"+ip+"/status-dmrsms.cgi", headers=header)
+#   print(r)
+   sms_sender = str(json.loads(r.text)['rx_msg_srcid']) # Sender DMR ID of SMS
+   sms_message = ''.join(json.loads(r.text)['rx_msg'].split('00')).decode('hex') # The actual text of SMS, decoded
+   sms_format = str(json.loads(r.text)['rx_msg_format']) # 0 - ETSI, 1 - UDP, 2 - UDP/Chinese
+   sms_type = str(json.loads(r.text)['rx_msg_calltype']) # 0 = private, 1 = group
+   f_msg = open(sms_msg, 'w')
+   f_msg.write(sms_type)
+   f_msg.write('\n')
+   f_msg.write(sms_format)
+   f_msg.write('\n')
+   f_msg.write(sms_sender)
+   f_msg.write('\n')
+   f_msg.write(sms_message)
+   f_msg.write('\n')
+   f_msg.close
+#   print(sms_sender)
+#   print(sms_message)
    if sms_message != '':
       return([ sms_sender, sms_message ])
 
