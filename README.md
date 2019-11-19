@@ -2,12 +2,14 @@
 
 Cloned from battlehax by kf7eel
 
-Updating this project to use Web Tokens as the latest Openspot firmware has switched
+Updating this project to use JSON Web Tokens as the latest Openspot firmware has switched
 to these for authentication.
 
 Using this as a base for one of my projects.
 
 Anyone know what the original project was licensed as? Please let me know if you know.
+
+----
 
 Interact with an openSpot SharkRF via the http json api.
 For now, only a few options are implemented for changing settings. I will work on adding more or all of the settings.
