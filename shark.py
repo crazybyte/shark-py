@@ -8,11 +8,11 @@
 import requests, json, re, binascii, hashlib
 
 password = 'openspot'
-ip = 'insert ip address here'
+ip = 'ip here'
 tmp = '/tmp/.shark.auth'
 auth_file = '/tmp/.shark.jtw'
 sms_msg = '/tmp/.shark.sms'
-hotspot_id = 'DMR ID here'
+hotspot_id = '1234567'
 
 def do_checkauth():
    global post
@@ -35,7 +35,7 @@ def do_login():
    tok = str(r.json()['token'])
    digest = hashlib.sha256(tok + password).hexdigest()
    post = { 'token': tok, 'digest': digest }
-   login = requests.post("http://"+ip+"/login.cgi", json=post)
+   login = requests.post(http://"+ip+"/login.cgi", json=post)
    f = open(auth_file, 'w')
    f.write(json.loads(login.text)['jwt'])
    f.close
@@ -198,19 +198,20 @@ def do_send_sms( sms_type, sms_format, dstid, msg ):
     send_tdma_channel = "0"
     send_to_modem = "1" #0=Network, 1=Modem
     encoded = "".join([str('00' + x) for x in re.findall('..',binascii.hexlify(msg))] )
+#    print(encoded)
     f = open(auth_file, 'r')
     auth_text = f.read()
 # Changed character count from 150 to 300, this is to accomodate pairs as opposed to individual characters.
-    if len(encoded) > 300:
+    if len(encoded) > 448:
       return("Message too long")
     post = { 'only_save': only_save, 'send_dstid': dstid, 'send_calltype': send_calltype, 'send_srcid': send_srcid, 'send_format': send_format, 'send_tdma_channel': send_tdma_channel, 'send_to_modem': send_to_modem, 'send_msg': encoded.upper() }
     header = {'Authorization': 'Bearer ' + auth_text }
     requests.post("http://"+ip+"/status-dmrsms.cgi", json=post, headers=header)
     rq = requests.post("http://"+ip+"/status-dmrsms.cgi", json=post, headers=header)
-    print(rq)
-    print(post)
-    print(encoded)
-    print(auth_text)
+#    print(rq)
+#    print(post)
+#    print(encoded)
+#    print(auth_text)
 
 def do_recieve_sms():
    f = open(auth_file, 'r')
