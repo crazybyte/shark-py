@@ -8,11 +8,11 @@
 import requests, json, re, binascii, hashlib
 
 password = 'openspot'
-ip = 'ip here'
+ip = '192.168.8.121'
 tmp = '/tmp/.shark.auth'
 auth_file = '/tmp/.shark.jtw'
 sms_msg = '/tmp/.shark.sms'
-hotspot_id = '1234567'
+hotspot_id = 'DMR ID'
 
 def do_checkauth():
    global post
@@ -35,7 +35,7 @@ def do_login():
    tok = str(r.json()['token'])
    digest = hashlib.sha256(tok + password).hexdigest()
    post = { 'token': tok, 'digest': digest }
-   login = requests.post(http://"+ip+"/login.cgi", json=post)
+   login = requests.post("http://"+ip+"/login.cgi", json=post)
    f = open(auth_file, 'w')
    f.write(json.loads(login.text)['jwt'])
    f.close
@@ -189,14 +189,14 @@ def set_mode( new_mode ):
    if int(json.loads(dm.text)['changed']) != 1:
       return("MODE ERROR: cannot change mode")
 
-def do_send_sms( sms_type, sms_format, dstid, msg ):
+def do_send_sms( sms_type, sms_format, dstid, modem, msg ):
     only_save = "0"
 # Replaced default values with input variable. Use quotes to restore default values
     send_calltype = sms_type # 0=Private, 1=TalkGroup
     send_srcid = hotspot_id
     send_format = sms_format #MD-380/390 is 1
     send_tdma_channel = "0"
-    send_to_modem = "1" #0=Network, 1=Modem
+    send_to_modem = modem #0=Network, 1=Modem
     encoded = "".join([str('00' + x) for x in re.findall('..',binascii.hexlify(msg))] )
 #    print(encoded)
     f = open(auth_file, 'r')
