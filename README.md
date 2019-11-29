@@ -2,10 +2,10 @@
 
 Cloned from battlehax by kf7eel
 
-Updating this project to use JSON Web Tokens as the latest Openspot firmware has switched
-to these for authentication.
+Updating this project to use JSON Web Tokens as Openspot firmware 0101 and later have switched
+web token for authentication.
 
-Using this as a base for one of my projects.
+Using this as a base for shark-py-sms, https://github.com/kf7eel/shark-py-sms.
 
 Anyone know what the original project was licensed as? Please let me know if you know.
 
