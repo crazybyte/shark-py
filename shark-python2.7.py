@@ -15,16 +15,14 @@ sms_msg = '/tmp/.shark.sms'
 sms_msg_only = '/tmp/.shark.sms_only'
 hotspot_id = 'DMR ID'
 
-utf_8_url = str("http://"+ip+"/gettok.cgi").encode('utf-8')
-
 def do_checkauth():
    global post
    try:
-      f_auth = open(auth_file, 'r',encoding='utf-8')
+      f_auth = open(auth_file, 'r')
       auth_text = f_auth.read()
       header = { 'Authorization': 'Bearer ' + auth_text }
       login = requests.post("http://"+ip+"/checkauth.cgi", headers=header)
-      print((json.loads(login.text)['success']))
+      print(json.loads(login.text)['success'])
       if int(json.loads(login.text)['success']) != 1:
          return(do_login())
       else:
@@ -34,11 +32,9 @@ def do_checkauth():
 
 def do_login():
    global tok, digest, post
-   r = requests.post(utf_8_url)
-   tok = r.json()['token']
-   #tok = non_tok.encode('utf-8')
-   #utf8_password = str(password).encode('utf8')
-   digest = hashlib.sha256(tok.encode('utf-8') + password.encode('utf-8')).hexdigest()
+   r = requests.post("http://"+ip+"/gettok.cgi")
+   tok = str(r.json()['token'])
+   digest = hashlib.sha256(tok + password).hexdigest()
    post = { 'token': tok, 'digest': digest }
    login = requests.post("http://"+ip+"/login.cgi", json=post)
    f = open(auth_file, 'w')
@@ -152,7 +148,7 @@ def get_homebrew():
    header = { 'Authorization': 'Bearer ' + auth_text }
    r = requests.get("http://"+ip+"/homebrewsettings.cgi", json=post, headers=header)
    print(r)
-   print((r.json()))
+   print(r.json())
    return( r.json() )
 
 def set_talkgroup(new_group):
@@ -202,10 +198,8 @@ def do_send_sms( sms_type, sms_format, dstid, modem, msg ):
     send_format = sms_format #MD-380/390 is 1
     send_tdma_channel = "0"
     send_to_modem = modem #0=Network, 1=Modem
-    msg_bytes = str.encode(msg)
-    encoded = "".join([str('00' + x) for x in re.findall('..',bytes.hex(msg_bytes))] )
-
-    print(encoded)
+    encoded = "".join([str('00' + x) for x in re.findall('..',binascii.hexlify(msg))] )
+#    print(encoded)
     f = open(auth_file, 'r')
     auth_text = f.read()
 # Changed character count from 150 to 300, this is to accomodate pairs as opposed to individual characters.
@@ -218,7 +212,7 @@ def do_send_sms( sms_type, sms_format, dstid, modem, msg ):
 #    print(rq)
 #    print(post)
     print(encoded)
-    print(("Destination: " + dstid))
+    print("Destination: " + dstid)
 #    print(auth_text)
 
 def do_recieve_sms():
@@ -228,8 +222,7 @@ def do_recieve_sms():
    r = requests.get("http://"+ip+"/status-dmrsms.cgi", headers=header)
 #   print(r)
    sms_sender = str(json.loads(r.text)['rx_msg_srcid']) # Sender DMR ID of SMS
-   sms_message_hex = ''.join(json.loads(r.text)['rx_msg'].split('00')) # The actual text of SMS, decoded
-   sms_message = bytes.fromhex(sms_message_hex).decode('utf-8')
+   sms_message = ''.join(json.loads(r.text)['rx_msg'].split('00')).decode('hex') # The actual text of SMS, decoded
    sms_format = str(json.loads(r.text)['rx_msg_format']) # 0 - ETSI, 1 - UDP, 2 - UDP/Chinese
    sms_type = str(json.loads(r.text)['rx_msg_calltype']) # 0 = private, 1 = group
    f_msg = open(sms_msg, 'w')
