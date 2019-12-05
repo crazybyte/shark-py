@@ -4,16 +4,19 @@
 
 # Updated code to reflect usage of JSON Web Tokens by the OpenSpot frimware as of 6-2018.
 # Changed all items related to gathering information to GET requests as opposed to POST.
+# Updated some code to reflect Python 3.7 compatability
+
+# TODO: Add modem 1 or 0 to .shark.sms for better implimentation of replying to network SMS
 
 import requests, json, re, binascii, hashlib
 
 password = 'openspot'
-ip = '192.168.8.121'
+ip = '10.10.10.132'
 tmp = '/tmp/.shark.auth'
 auth_file = '/tmp/.shark.jtw'
 sms_msg = '/tmp/.shark.sms'
 sms_msg_only = '/tmp/.shark.sms_only'
-hotspot_id = 'DMR ID'
+hotspot_id = '9998' # HAS TO MATCH "SOURCE ID" in DMR SMS PAGE!
 
 utf_8_url = str("http://"+ip+"/gettok.cgi").encode('utf-8')
 
@@ -200,12 +203,11 @@ def do_send_sms( sms_type, sms_format, dstid, modem, msg ):
     send_calltype = sms_type # 0=Private, 1=TalkGroup
     send_srcid = hotspot_id
     send_format = sms_format #MD-380/390 is 1
-    send_tdma_channel = "0"
+    send_tdma_channel = "1"
     send_to_modem = modem #0=Network, 1=Modem
     msg_bytes = str.encode(msg)
     encoded = "".join([str('00' + x) for x in re.findall('..',bytes.hex(msg_bytes))] )
-
-    print(encoded)
+    #print(encoded)
     f = open(auth_file, 'r')
     auth_text = f.read()
 # Changed character count from 150 to 300, this is to accomodate pairs as opposed to individual characters.
@@ -217,8 +219,8 @@ def do_send_sms( sms_type, sms_format, dstid, modem, msg ):
     rq = requests.post("http://"+ip+"/status-dmrsms.cgi", json=post, headers=header)
 #    print(rq)
 #    print(post)
-    print(encoded)
     print(("Destination: " + dstid))
+    print(encoded)
 #    print(auth_text)
 
 def do_recieve_sms():
