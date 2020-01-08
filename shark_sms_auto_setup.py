@@ -9,8 +9,8 @@
 # TODO: Add modem 1 or 0 to .shark.sms for better implimentation of replying to network SMS
 
 #########
-THIS VERSION OF shark.py IS FOR USE WITH AUTO SETUP SCRIPT FOR SHARK-PY-SMS, IT HAS SOME VARIABLES MISSING ON PURPOSE.
-WILL NOT WORK BY ITS SELF.
+# THIS VERSION OF shark.py IS FOR USE WITH AUTO SETUP SCRIPT FOR SHARK-PY-SMS, IT HAS SOME VARIABLES MISSING ON PURPOSE.
+# WILL NOT WORK BY ITS SELF.
 #########
 
 from config import *
