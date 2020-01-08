@@ -206,6 +206,7 @@ def set_mode( new_mode ):
 
 def do_send_sms( sms_type, sms_format, dstid, modem, msg ):
     only_save = "0"
+    intercept_net_msgs = incoming_network_messages # Will add option later, 1 means incoming network messages are processed
 # Replaced default values with input variable. Use quotes to restore default values
     send_calltype = sms_type # 0=Private, 1=TalkGroup
     send_srcid = hotspot_id
@@ -251,7 +252,7 @@ def do_recieve_sms():
    f_msg.write('\n')
    f_msg.write(sms_message)
    f_msg.write('\n')
-   f_msg.write(sms_route)
+   f_msg.write(sms_modem)
    f_msg.write('\n')
    f_msg.close
    f_msg_only = open(sms_msg_only, 'w')
