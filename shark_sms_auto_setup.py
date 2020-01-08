@@ -13,6 +13,8 @@ THIS VERSION OF shark.py IS FOR USE WITH AUTO SETUP SCRIPT FOR SHARK-PY-SMS, IT 
 WILL NOT WORK BY ITS SELF.
 #########
 
+from config import *
+
 import requests, json, re, binascii, hashlib
 
 # password = 'openspot'
