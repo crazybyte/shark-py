@@ -241,6 +241,7 @@ def do_recieve_sms():
    sms_message = bytes.fromhex(sms_message_hex).decode('utf-8')
    sms_format = str(json.loads(r.text)['rx_msg_format']) # 0 - ETSI, 1 - UDP, 2 - UDP/Chinese
    sms_type = str(json.loads(r.text)['rx_msg_calltype']) # 0 = private, 1 = group
+   sms_route = str(json.loads(r.text)['rx_msg_from_modem']) # 0 = modem, 1 = Network
    f_msg = open(sms_msg, 'w')
    f_msg.write(sms_type)
    f_msg.write('\n')
@@ -249,6 +250,8 @@ def do_recieve_sms():
    f_msg.write(sms_sender)
    f_msg.write('\n')
    f_msg.write(sms_message)
+   f_msg.write('\n')
+   f_msg.write(sms_route)
    f_msg.write('\n')
    f_msg.close
    f_msg_only = open(sms_msg_only, 'w')
