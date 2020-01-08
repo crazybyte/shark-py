@@ -19,11 +19,11 @@ import requests, json, re, binascii, hashlib
 
 # password = 'openspot'
 # ip = '10.10.10.132'
-tmp = '/tmp/shark/shark.auth'
-auth_file = '/tmp/shark/shark.jtw'
-sms_msg = '/tmp/shark/shark.sms'
-sms_msg_only = '/tmp/shark/shark.sms_only'
-hotspot_id = '9998' # HAS TO MATCH "SOURCE ID" in DMR SMS PAGE!
+tmp = '/tmp/.shark.auth'
+auth_file = '/tmp/.shark.jtw'
+sms_msg = '/tmp/.shark.sms'
+sms_msg_only = '/tmp/.shark.sms_only'
+#hotspot_id = '9998' # HAS TO MATCH "SOURCE ID" in DMR SMS PAGE!
 
 utf_8_url = str("http://"+ip+"/gettok.cgi").encode('utf-8')
 
