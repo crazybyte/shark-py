@@ -206,7 +206,7 @@ def set_mode( new_mode ):
 
 def do_send_sms( sms_type, sms_format, dstid, modem, msg ):
     only_save = "0"
-    intercept_net_msgs = incoming_network_messages # Will add option later, 1 means incoming network messages are processed
+    intercept_net_msgs = incoming_network_messages # Will add option later, 1 means incoming network messages are processed, 0 = not processed
 # Replaced default values with input variable. Use quotes to restore default values
     send_calltype = sms_type # 0=Private, 1=TalkGroup
     send_srcid = hotspot_id
@@ -221,7 +221,7 @@ def do_send_sms( sms_type, sms_format, dstid, modem, msg ):
 # Changed character count from 150 to 300, this is to accomodate pairs as opposed to individual characters.
     if len(encoded) > 448:
       return("Message too long")
-    post = { 'only_save': only_save, 'send_dstid': dstid, 'send_calltype': send_calltype, 'send_srcid': send_srcid, 'send_format': send_format, 'send_tdma_channel': send_tdma_channel, 'send_to_modem': send_to_modem, 'send_msg': encoded.upper() }
+    post = { 'only_save': only_save, 'intercept_net_msgs': intercept_net_msgs, 'send_dstid': dstid, 'send_calltype': send_calltype, 'send_srcid': send_srcid, 'send_format': send_format, 'send_tdma_channel': send_tdma_channel, 'send_to_modem': send_to_modem, 'send_msg': encoded.upper() }
     header = {'Authorization': 'Bearer ' + auth_text }
     requests.post("http://"+ip+"/status-dmrsms.cgi", json=post, headers=header)
     rq = requests.post("http://"+ip+"/status-dmrsms.cgi", json=post, headers=header)
@@ -242,7 +242,7 @@ def do_recieve_sms():
    sms_message = bytes.fromhex(sms_message_hex).decode('utf-8')
    sms_format = str(json.loads(r.text)['rx_msg_format']) # 0 - ETSI, 1 - UDP, 2 - UDP/Chinese
    sms_type = str(json.loads(r.text)['rx_msg_calltype']) # 0 = private, 1 = group
-   sms_route = str(json.loads(r.text)['rx_msg_from_modem']) # 0 = modem, 1 = Network
+   sms_modem = str(json.loads(r.text)['rx_msg_from_modem']) # 0 = modem, 1 = Network
    f_msg = open(sms_msg, 'w')
    f_msg.write(sms_type)
    f_msg.write('\n')
@@ -254,10 +254,10 @@ def do_recieve_sms():
    f_msg.write('\n')
    f_msg.write(sms_modem)
    f_msg.write('\n')
-   f_msg.close
+   f_msg.close()
    f_msg_only = open(sms_msg_only, 'w')
    f_msg_only.write(sms_message)
-   f_msg_only.close
+   f_msg_only.close()
 
 #   print(sms_sender)
 #   print(sms_message)
